@@ -17,6 +17,7 @@ RUN dpkg -i /savinstpkg.deb || true
 
 COPY ./entrypoint.sh /
 # Update, then run.
-ENTRYPOINT ["/entrypoint.sh"]
+COPY ./job.sh /opt/sophos-av/bin/
+RUN chmod +x /opt/sophos-av/bin/job.sh
 
-CMD ["savscan", "-h"]
+ENTRYPOINT ["/opt/sophos-av/bin/job.sh"]
