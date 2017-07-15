@@ -1,0 +1,38 @@
+  version: 0.2
+
+  phases:
+    install:
+      commands:
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION)
+    pre_build:
+      commands:
+        - echo Nothing to do in the pre_build phase...
+        - echo GithubUser $GITUSER
+        - echo GithubUser $GITPASS
+        - echo $(git --version)
+        - git remote set-url origin https://$GITUSER:$GITPASS@github.com/transactrx/$GITPROJECT
+        - git fetch --all
+        - export GIT_MOST_RECENT_BRANCH=$(git for-each-ref --sort=-committerdate refs/heads/ --format='%(refname:short)'|sed -n 1p)
+        - git checkout $GIT_MOST_RECENT_BRANCH
+        - export VERSION=$GIT_MOST_RECENT_BRANCH
+        - export REG="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+    build:
+      commands:
+      - export VERSION=$(git for-each-ref --sort=-committerdate refs/heads/ --format='%(refname:short)'|sed -n 1p)
+      - echo Version $VERSION
+      - echo Building Docker Image... $REG
+      - echo Image Report Name $IMAGE_REPO_NAME
+      - echo Building Docker... $REG/$IMAGE_REPO_NAME:$VERSION
+      - docker build -t $REG/$IMAGE_REPO_NAME:$VERSION .
+      - echo PushDockerImage... $REG/$IMAGE_REPO_NAME:$VERSION
+      - docker push $REG/$IMAGE_REPO_NAME:$VERSION
+    post_build:
+      commands:
+        - echo Build completed on `date`
+#  artifacts:
+#    files:
+#      - Interfaces/target/csinterfaces.war docker/war/.
+#      - Jobs/target/*.jar docker/jar/.
+#      - Readers/target/*.jar docker/jar/
+#    discard-paths: yes
